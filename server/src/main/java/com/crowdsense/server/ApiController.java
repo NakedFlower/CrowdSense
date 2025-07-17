@@ -17,11 +17,11 @@ import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 import software.amazon.awssdk.enhanced.dynamodb.model.ScanEnhancedRequest;
 
 @Controller
-public class APIController {
+public class ApiController {
     private final DynamoDbEnhancedClient enhancedClient;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public APIController(DynamoDbEnhancedClient enhancedClient) {
+    public ApiController(DynamoDbEnhancedClient enhancedClient) {
         this.enhancedClient = enhancedClient;
     }
 
