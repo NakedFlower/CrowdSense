@@ -25,12 +25,13 @@ jobs:
 
     - name: Build with Gradle
       run: ./gradlew build
+      working-directory: ./server
 
     - name: Upload build artifact
       uses: actions/upload-artifact@v4
       with:
         name: server
-        path: build/libs/server-0.0.1-SNAPSHOT.jar
+        path: server/build/libs/server-0.0.1-SNAPSHOT.jar
   
   deploy:
     needs: build
@@ -41,12 +42,12 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: server
-        path: build/libs/
+        path: server/build/libs/
 
     - name: Deploy to EC2
       run: |
         echo "${{ secrets.SSH_KEY }}" > private_key.pem
         chmod 600 private_key.pem
-        scp -i private_key.pem -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }} build/libs/server-0.0.1-SNAPSHOT.jar ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/home/${{ secrets.SSH_USER }}/server.jar
+        scp -i private_key.pem -o StrictHostKeyChecking=no -P ${{ secrets.SSH_PORT }} server/build/libs/server-0.0.1-SNAPSHOT.jar ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/home/${{ secrets.SSH_USER }}/server.jar
         ssh -i private_key.pem -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "pgrep java | xargs kill -9; nohup java -jar /home/${{ secrets.SSH_USER }}/server.jar > app.log 2>&1 &"
         rm -f private_key.pem
