@@ -1,5 +1,5 @@
 # Java + Node gitignore
-
+.vscode
 
 # Compiled class file
 *.class
