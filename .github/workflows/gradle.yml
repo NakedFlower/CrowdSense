@@ -1,0 +1,52 @@
+name: Java CI with Gradle
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v4
+
+    - name: Build with Gradle
+      run: ./gradlew build
+
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: server
+        path: build/libs/server-0.0.1-SNAPSHOT.jar
+  
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Download build artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: server
+        path: build/libs/
+
+    - name: Deploy to EC2
+      run: |
+        echo "${{ secrets.SSH_KEY }}" > private_key.pem
+        chmod 600 private_key.pem
+        scp -i private_key.pem -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }} build/libs/server-0.0.1-SNAPSHOT.jar ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/home/${{ secrets.SSH_USER }}/server.jar
+        ssh -i private_key.pem -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "pgrep java | xargs kill -9; nohup java -jar /home/${{ secrets.SSH_USER }}/server.jar > app.log 2>&1 &"
+        rm -f private_key.pem
