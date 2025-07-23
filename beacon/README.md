@@ -10,3 +10,7 @@ beacon.ino
 
 certs/  
 : ESP32에서 AWS IoT Core에 연결할 때 필요한 인증서/키 파일들.  
+
+Library 사용
+- ArduinoJson
+- PubSubClient
