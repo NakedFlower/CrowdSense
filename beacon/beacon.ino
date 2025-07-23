@@ -6,6 +6,9 @@
 #include <BLEUtils.h>
 #include <BLEScan.h>
 #include <BLEBeacon.h>
+#include <ArduinoJson.h>
+#include "time.h"
+
 
 // ──────────────── Wi-Fi 설정 ────────────────
 const char* WIFI_SSID     = "asdf";
@@ -14,6 +17,19 @@ const char* WIFI_PASSWORD = "asdf";
 // ──────────────── MQTT 브로커 설정 (AWS IoT Core) ────────────────
 const char* MQTT_BROKER   = "asdf"; // 예: "xxxxxx-ats.iot.ap-northeast-2.amazonaws.com"
 const int   MQTT_PORT     = 8883; // AWS IoT는 TLS 사용, 8883 포트
+
+// ──────────────── 비콘 정보 (DynamoDB 구조에 맞춤) ────────────────
+String Id;
+const char* Name = "CrowdSense_dev2";
+const float Latitude   = 37.552469;
+const float Longitude  = 126.971028;
+const int   Radius     = 10; // 미터 단위 등
+
+
+const char* NTP_SERVER1 = "pool.ntp.org";
+const char* NTP_SERVER2 = "time.nist.gov";   // 백업
+const long   GMT_OFFSET_SECONDS   = 0;       // UTC = 0
+const int    DAYLIGHT_OFFSET_SEC  = 0;       // DST 미적용
 
 // AWS IoT Core Root CA 인증서
 const char* AWS_ROOT_CA = R"EOF(
@@ -36,12 +52,14 @@ asdf
 -----END RSA PRIVATE KEY-----
 )KEY";
 
-// ──────────────── 비콘 정보 (DynamoDB 구조에 맞춤) ────────────────
-const char* BeaconID   = "beacon-001";
-const char* BeaconName = "CrowdSense_dev1";
-const float Latitude   = ;
-const float Longitude  = ;
-const int   Radius     = 10; // 미터 단위 등
+
+// ── CHIP ID 얻기 (MAC 48 bit → HEX 12글자) ──
+String getChipId() {
+  uint64_t mac = ESP.getEfuseMac();
+  char buf[13];
+  sprintf(buf, "%012llX", mac);
+  return String(buf);      // 예) A4E57C12AB34
+}
 
 // ──────────────── BLE 스캔 설정 ────────────────
 constexpr uint32_t kScanSeconds = 10;
@@ -55,7 +73,7 @@ PubSubClient mqttClient(espClient);
 void connectToMQTT() {
   while (!mqttClient.connected()) {
     Serial.print("MQTT 연결 시도...");
-    if (mqttClient.connect(BeaconID)) { // 클라이언트ID로 BeaconID 사용
+    if (mqttClient.connect(Id.c_str())) { // 클라이언트ID로 Id 사용
       Serial.println("연결 성공!");
     } else {
       Serial.print("실패, rc=");
@@ -69,6 +87,7 @@ void connectToMQTT() {
 // ──────────────── SETUP ────────────────
 void setup() {
   Serial.begin(115200);
+  Id = getChipId();
   delay(100);
 
   // Wi-Fi 연결
@@ -91,6 +110,17 @@ void setup() {
   // MQTT 브로커 설정
   mqttClient.setServer(MQTT_BROKER, MQTT_PORT);
 
+  // ── UTC 시간 동기화 ──
+  configTime(GMT_OFFSET_SECONDS, DAYLIGHT_OFFSET_SEC,
+             NTP_SERVER1, NTP_SERVER2);
+  // 처음 부팅 직후에는 시간이 아직 1970년으로 잡혀 있으므로, 몇 초 기다려 확인
+  Serial.print("NTP 동기화 중");
+  time_t now;
+  while ((now = time(nullptr)) < 1609459200) { // 2021‑01‑01 00:00:00
+    Serial.print('.');  delay(500);
+  }
+  Serial.printf("\nUTC 동기화 완료: %ld\n", now);
+
   // BLE 초기화
   BLEDevice::init("");
   pBLEScan = BLEDevice::getScan();
@@ -100,19 +130,22 @@ void setup() {
 
   connectToMQTT();
 
-  // Information Table용 데이터 전송 (1회만)
-  String infoPayload = "{";
-  infoPayload += "\"BeaconID\":\"" + String(BeaconID) + "\",";
-  infoPayload += "\"BeaconName\":\"" + String(BeaconName) + "\",";
-  infoPayload += "\"Latitude\":" + String(Latitude, 6) + ",";
-  infoPayload += "\"Longitude\":" + String(Longitude, 6) + ",";
-  infoPayload += "\"Radius\":" + String(Radius);
-  infoPayload += "}";
+  // ── Information Table용 메시지 1회 전송 ──
+  StaticJsonDocument<256> doc;
+  doc["Id"]        = Id;
+  doc["Type"]      = "ESP32";
+  doc["Name"]      = Name;
+  doc["Latitude"]  = Latitude;
+  doc["Longitude"] = Longitude;
+  doc["Radius"]    = Radius;
 
-  if (mqttClient.publish("beacon/information", infoPayload.c_str())) {
-    Serial.println("Information Table 데이터 전송 성공: " + infoPayload);
+  String payload;
+  serializeJson(doc, payload);
+
+  if (mqttClient.publish("beacon/information", payload.c_str())) {
+    Serial.println("Information 전송 성공: " + payload);
   } else {
-    Serial.println("Information Table 데이터 전송 실패");
+    Serial.println("Information 전송 실패");
   }
 }
 
@@ -135,24 +168,25 @@ void loop() {
   }
   int avgRssi = devCount > 0 ? rssiSum / devCount : 0;
 
-  // Timestamp
-  unsigned long timestamp = millis();
+  time_t now = time(nullptr);            // ⬅️ UTC epoch 초
+  uint32_t timestamp = (uint32_t)now;    // DynamoDB Number(UNIX time)
 
-  // Scan Table용 JSON 생성
-  String scanPayload = "{";
-  scanPayload += "\"BeaconID\":\"" + String(BeaconID) + "\",";
-  scanPayload += "\"DeviceCount\":" + String(devCount) + ",";
-  scanPayload += "\"Timestamp\":" + String(timestamp) + ",";
-  scanPayload += "\"RSSI\":" + String(avgRssi);
-  scanPayload += "}";
+  // ── Scan Table용 메시지 ──
+  StaticJsonDocument<256> docScan;
+  docScan["Id"]        = Id;
+  docScan["Timestamp"] = timestamp;
+  docScan["Count"]     = devCount;
+  docScan["RSSI"]      = avgRssi;
 
-  // Scan Table용 토픽으로 publish
+  String scanPayload;
+  serializeJson(docScan, scanPayload);
+
   if (mqttClient.publish("beacon/scan", scanPayload.c_str())) {
-    Serial.println("Scan Table 데이터 전송 성공: " + scanPayload);
+    Serial.println("Scan 전송 성공: " + scanPayload);
   } else {
-    Serial.println("Scan Table 데이터 전송 실패");
+    Serial.println("Scan 전송 실패");
   }
 
   pBLEScan->clearResults();
-  delay(10000); // 10초 대기 후 반복
+  delay(15000);
 }
