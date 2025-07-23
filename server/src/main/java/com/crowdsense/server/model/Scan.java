@@ -7,36 +7,27 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSortK
 
 @DynamoDbBean
 public class Scan {
-    private int beaconId;
-    private int timestamp;
-    private String payload;
+    private String id; // Partition Key
+    private Long timestamp; // Sort Key
+
+    private Integer count;
+    private Integer rssi;
 
     @DynamoDbPartitionKey
-    @DynamoDbAttribute("BeaconID")
-    public int getBeaconId() {
-        return beaconId;
-    }
-
-    public void setBeaconId(int beaconId) {
-        this.beaconId = beaconId;
-    }
+    @DynamoDbAttribute("Id")
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
 
     @DynamoDbSortKey
     @DynamoDbAttribute("Timestamp")
-    public int getTimestamp() {
-        return timestamp;
-    }
+    public Long getTimestamp() { return timestamp; }
+    public void setTimestamp(Long timestamp) { this.timestamp = timestamp; }
 
-    public void setTimestamp(int timestamp) {
-        this.timestamp = timestamp;
-    }
+    @DynamoDbAttribute("Count")
+    public Integer getCount() { return count; }
+    public void setCount(Integer count) { this.count = count; }
 
-    @DynamoDbAttribute("payload")
-    public String getPayload() {
-        return payload;
-    }
-
-    public void setPayload(String payload) {
-        this.payload = payload;
-    }
+    @DynamoDbAttribute("RSSI")
+    public Integer getRssi() { return rssi; }
+    public void setRssi(Integer rssi) { this.rssi = rssi; }
 }
