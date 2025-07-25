@@ -21,6 +21,7 @@ const int   MQTT_PORT     = 8883; // AWS IoT는 TLS 사용, 8883 포트
 // ──────────────── 비콘 정보 (DynamoDB 구조에 맞춤) ────────────────
 String Id;
 const char* Name = "CrowdSense_dev2";
+const char* Type = "Seoul";
 const float Latitude   = 37.552469;
 const float Longitude  = 126.971028;
 const int   Radius     = 10; // 미터 단위 등
@@ -133,7 +134,7 @@ void setup() {
   // ── Information Table용 메시지 1회 전송 ──
   StaticJsonDocument<256> doc;
   doc["Id"]        = Id;
-  doc["Type"]      = "ESP32";
+  doc["Type"]      = Type;
   doc["Name"]      = Name;
   doc["Latitude"]  = Latitude;
   doc["Longitude"] = Longitude;
