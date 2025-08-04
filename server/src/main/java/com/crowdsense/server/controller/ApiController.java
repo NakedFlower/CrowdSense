@@ -2,8 +2,12 @@ package com.crowdsense.server.controller;
 
 import com.crowdsense.server.dto.ApiResponse;
 import com.crowdsense.server.dto.response.BeaconIdsResponse;
+import com.crowdsense.server.dto.response.BeaconSummary;
 import com.crowdsense.server.dto.response.CrowdAvgResponse;
 import com.crowdsense.server.service.BeaconService;
+
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,8 +33,10 @@ public class ApiController {
             @RequestParam(defaultValue = "10") int limit
     ) {
         int lim = Math.min(limit, MAX_LIMIT);
-        var ids = beaconService.getBeaconIdsByGeo(lat, lon, region, rad, lim);
-        return ResponseEntity.ok(new ApiResponse<>(200, new BeaconIdsResponse(ids)));
+        List<BeaconSummary> items = beaconService.getBeaconIdsByGeo(lat, lon, region, rad, lim);
+        BeaconIdsResponse payload = new BeaconIdsResponse(items);
+
+        return ResponseEntity.ok(new ApiResponse<BeaconIdsResponse>(200, payload));
     }
 
     @RequestMapping(value = "/beacon_name", method = {RequestMethod.GET, RequestMethod.POST})
@@ -39,8 +45,10 @@ public class ApiController {
             @RequestParam(defaultValue = "10") int limit
     ) {
         int lim = Math.min(limit, MAX_LIMIT);
-        var ids = beaconService.getBeaconIdsByName(name, lim);
-        return ResponseEntity.ok(new ApiResponse<>(200, new BeaconIdsResponse(ids)));
+        List<BeaconSummary> items = beaconService.getBeaconIdsByName(name, lim);
+        BeaconIdsResponse payload = new BeaconIdsResponse(items);
+
+        return ResponseEntity.ok(new ApiResponse<BeaconIdsResponse>(200, payload));
     }
 
     @RequestMapping(value = "/crowd_avg", method = {RequestMethod.GET, RequestMethod.POST})

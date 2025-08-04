@@ -1,5 +1,6 @@
 package com.crowdsense.server.service;
 
+import com.crowdsense.server.dto.response.BeaconSummary;
 import com.crowdsense.server.model.Information;
 import com.crowdsense.server.model.Scan;
 import com.crowdsense.server.repository.InformationRepository;
@@ -23,23 +24,22 @@ public class BeaconServiceImpl implements BeaconService {
     }
 
     @Override
-    public List<String> getBeaconIdsByGeo(double lat, double lon, String region, double radiusMeters, int limit) {
+    public List<BeaconSummary> getBeaconIdsByGeo(double lat, double lon, String region, double radiusMeters, int limit) {
         List<Information> candidates = infoRepo.queryByRegion(region, limit * 5);
 
         return candidates.stream()
                 .filter(i -> i.getLatitude() != null && i.getLongitude() != null)
-                .map(i -> new Dist(i.getId(), distanceMeters(lat, lon, i.getLatitude(), i.getLongitude())))
-                .filter(d -> d.distance <= radiusMeters)
+                .map(i -> new Dist(i, distanceMeters(lat, lon, i.getLatitude(), i.getLongitude())))
                 .sorted(Comparator.comparingDouble(d -> d.distance))
                 .limit(limit)
-                .map(d -> d.id)
+                .map(d -> BeaconSummary.from(d.info))
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<String> getBeaconIdsByName(String name, int limit) {
+    public List<BeaconSummary> getBeaconIdsByName(String name, int limit) {
         return infoRepo.queryByName(name, limit).stream()
-                .map(Information::getId)
+                .map(BeaconSummary::from)
                 .collect(Collectors.toList());
     }
 
@@ -61,7 +61,7 @@ public class BeaconServiceImpl implements BeaconService {
         return cnt == 0 ? 0.0 : (double) sum / cnt;
     }
 
-    private record Dist(String id, double distance) {}
+    private record Dist(Information info, double distance) {}
     private static double distanceMeters(double lat1, double lon1, double lat2, double lon2) {
         final double R = 6371000.0;
         double dLat = Math.toRadians(lat2 - lat1);
