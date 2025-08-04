@@ -54,7 +54,7 @@ public class ApiController {
     @RequestMapping(value = "/crowd_avg", method = {RequestMethod.GET, RequestMethod.POST})
     public ResponseEntity<ApiResponse<CrowdAvgResponse>> crowdAvg(
             @RequestParam String id,
-            @RequestParam(defaultValue = "1") int time
+            @RequestParam(defaultValue = "5") int time
     ) {
         int minutes = Math.min(time, MAX_TIME_MINUTES);
         double avg = beaconService.getCrowdAverage(id, minutes);

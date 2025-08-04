@@ -45,8 +45,8 @@ public class BeaconServiceImpl implements BeaconService {
 
     @Override
     public double getCrowdAverage(String id, int minutes) {
-        long now = Instant.now().toEpochMilli();
-        long from = now - (minutes * 60_000L);
+        long now = Instant.now().getEpochSecond();
+        long from = now - (minutes * 60L);
 
         List<Scan> scans = scanRepo.queryBetween(id, from, now);
 
