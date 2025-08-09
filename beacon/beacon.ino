@@ -22,8 +22,8 @@ const int   MQTT_PORT     = 8883; // AWS IoT는 TLS 사용, 8883 포트
 String Id;
 const char* Name = "CrowdSense_dev2";
 const char* Type = "Seoul";
-const float Latitude   = 37.552469;
-const float Longitude  = 126.971028;
+const float Latitude   = 37.555954;
+const float Longitude  = 127.049423;
 const int   Radius     = 10; // 미터 단위 등
 
 
@@ -136,8 +136,8 @@ void setup() {
   doc["Id"]        = Id;
   doc["Type"]      = Type;
   doc["Name"]      = Name;
-  doc["Latitude"]  = Latitude;
-  doc["Longitude"] = Longitude;
+  doc["Latitude"]  = String(Latitude, 6);
+  doc["Longitude"] = String(Longitude, 6);
   doc["Radius"]    = Radius;
 
   String payload;
@@ -190,4 +190,5 @@ void loop() {
 
   pBLEScan->clearResults();
   delay(15000);
+
 }
