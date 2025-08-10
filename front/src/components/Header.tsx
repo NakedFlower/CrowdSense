@@ -1,8 +1,7 @@
-
-
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 
 interface HeaderProps {
   sidebarOpen: boolean;
@@ -11,46 +10,52 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ sidebarOpen, setSidebarOpen }) => {
   const railItems = [
-    { label: '지도 홈', icon: '🗺️' },
-    { label: '길찾기', icon: '🧭' },
-    { label: '버스/지하철', icon: '🚌' },
-    { label: '거리뷰', icon: '📷' },
-    { label: '저장', icon: '⭐' },
-    { label: '더보기', icon: '⋯' },
+    { label: '사이드바', icon: '/image/menu_icon.svg' }, // ← 새 토글 버튼 (길찾기 위)
+    { label: '길찾기', icon: '/image/main_icon.svg' },
+    { label: '근처 혼잡도', icon: '/image/person_icon.svg' },
+    { label: '버스/지하철', icon: '/image/train_icon.svg' },
+    { label: '저장', icon: '/image/star_icon.svg' },
+    { label: '더보기', icon: '/image/more_icon.svg' },
   ] as const;
 
   return (
-    <nav className="relative z-[60] bg-white border-r flex flex-col items-center py-3 gap-3">
+    <nav className="relative z-[60] bg-white border-r-3 flex flex-col items-center py-3 gap-3">
       {railItems.map((it) => (
         <button
           key={it.label}
           className={
-            'w-10 h-10 grid place-items-center rounded-lg hover:bg-gray-100 text-xl ' +
-            (it.label === '지도 홈' && sidebarOpen ? 'ring-1 ring-gray-300' : '')
+            'w-10 h-10 grid place-items-center rounded-lg hover:bg-gray-100 text-xl'
           }
           title={it.label}
           aria-label={it.label}
-          aria-pressed={it.label === '지도 홈' ? sidebarOpen : undefined}
-          onClick={it.label === '지도 홈' ? () => setSidebarOpen((v) => !v) : undefined}
+          aria-pressed={it.label === '사이드바' ? sidebarOpen : undefined}
+          onClick={
+            it.label === '사이드바'
+              ? () => setSidebarOpen((v) => !v)
+              : it.label === '길찾기'
+              ? () => {
+                  try {
+                    // 사이드바를 항상 열고, Smart Around(기본) 화면으로 전환
+                    setSidebarOpen(true);
+                    window.dispatchEvent(new CustomEvent('sidebar-open', { detail: { mode: 'route' } }));
+                  } catch (e) {
+                    console.warn('route open failed', e);
+                  }
+                }
+              : it.label === '근처 혼잡도'
+              ? () => {
+                  try {
+                    window.dispatchEvent(new CustomEvent('open-nearby'));
+                  } catch (e) {
+                    console.warn('open-nearby dispatch failed', e);
+                  }
+                }
+              : undefined
+          }
         >
-          {it.icon}
+          <Image src={it.icon} alt={it.label} width={24} height={24} />
         </button>
       ))}
-
-      <div className="mt-auto grid gap-2">
-        <button
-          className="w-10 h-10 grid place-items-center rounded-lg hover:bg-gray-100"
-          title="내 위치"
-        >
-          📍
-        </button>
-        <button
-          className="w-10 h-10 grid place-items-center rounded-lg hover:bg-gray-100"
-          title="메뉴"
-        >
-          ☰
-        </button>
-      </div>
     </nav>
   );
 };

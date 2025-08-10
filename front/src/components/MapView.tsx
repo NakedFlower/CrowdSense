@@ -4,6 +4,10 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Script from 'next/script';
 import { getBeaconByGeo, getCrowdAvg, type Beacon } from '../lib/api';
 import Marker from '../components/Marker';
+import BeaconSidebar from '../components/BeaconSidebar';
+
+// Type for sidebar event payload (nearby list)
+type NearbySidebarItem = { id: string; name?: string; lat: number; lon: number; avg: number | null };
 
 type MapViewProps = {
   /** 백엔드 region 파라미터 (예: 'Seoul' 또는 '서울') */
@@ -23,6 +27,9 @@ export default function MapView({
   const mapRef = useRef<any>(null);
   const [ready, setReady] = useState(false);
   const [markerNodes, setMarkerNodes] = useState<React.ReactNode[]>([]);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [selectedBeacon, setSelectedBeacon] = useState<Beacon | null>(null);
+  const localItemsRef = useRef<{ beacon: Beacon; lat: number; lon: number; avg: number | null }[]>([]);
 
   const appkey = process.env.NEXT_PUBLIC_KAKAO_MAP_APPKEY!;
 
@@ -148,9 +155,12 @@ export default function MapView({
           );
 
           const nodes: React.ReactNode[] = [];
+          const collected: { beacon: Beacon; lat: number; lon: number; avg: number | null }[] = [];
           items.forEach(({ beacon: b, lat, lon }, idx) => {
             const pos = new window.kakao.maps.LatLng(lat, lon);
             bounds.extend(pos);
+            const avgVal = (avgs[idx] ?? null) as number | null;
+            collected.push({ beacon: b, lat, lon, avg: avgVal });
             nodes.push(
               <Marker
                 key={`${b.id}-${lat}-${lon}`}
@@ -158,10 +168,16 @@ export default function MapView({
                 lat={lat}
                 lon={lon}
                 title={b.name || String(b.id)}
-                avg={avgs[idx] ?? undefined}
+                avg={avgVal ?? undefined}
+                onClick={() => {
+                  setSelectedBeacon(b);
+                  setSidebarOpen(true);
+                }}
               />
             );
           });
+          // Save for nearby list queries
+          localItemsRef.current = collected;
           setMarkerNodes(nodes);
 
           if (!bounds.isEmpty()) {
@@ -181,6 +197,34 @@ export default function MapView({
     });
   }, [ready, region, rad, limit, defaultCenter.lat, defaultCenter.lon]);
 
+  // Listen: when Header asks to open nearby list, compute visible beacons and notify the existing sidebar
+  useEffect(() => {
+    function onOpenNearby() {
+      try {
+        const map = mapRef.current;
+        if (!map || !window.kakao) return;
+        const b = map.getBounds();
+        const visible = (localItemsRef.current || []).filter((x) =>
+          b.contain(new window.kakao.maps.LatLng(x.lat, x.lon))
+        );
+        const items: NearbySidebarItem[] = visible.map((v) => ({
+          id: v.beacon.id,
+          name: v.beacon.name,
+          lat: v.lat,
+          lon: v.lon,
+          avg: v.avg,
+        }));
+        window.dispatchEvent(
+          new CustomEvent('sidebar-open', { detail: { mode: 'nearby', items } })
+        );
+      } catch (e) {
+        console.warn('open-nearby handler failed', e);
+      }
+    }
+    window.addEventListener('open-nearby', onOpenNearby as any);
+    return () => window.removeEventListener('open-nearby', onOpenNearby as any);
+  }, []);
+
   return (
     <>
       {/* Kakao SDK 로드 (클라이언트 전용) */}
@@ -191,6 +235,11 @@ export default function MapView({
       />
       <div ref={mapEl} className="absolute inset-0" />
       {markerNodes}
+      <BeaconSidebar
+        open={sidebarOpen}
+        beacon={selectedBeacon}
+        onClose={() => setSidebarOpen(false)}
+      />
     </>
   );
 }
