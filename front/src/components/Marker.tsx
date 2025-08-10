@@ -12,33 +12,34 @@ type Props = {
   /** 마커 이미지 경로 (예: '/image/marker_green.svg') */
   iconSrc?: string;
   avg?: number;
+  active?: boolean;
 };
 
-export default function Marker({ map, lat, lon, title, zIndex, onClick, iconSrc, avg }: Props) {
+export default function Marker({ map, lat, lon, title, zIndex, onClick, iconSrc, avg, active }: Props) {
+  function pickImageSrc() {
+    if (avg !== undefined) {
+      if (avg <= 10) return '/image/marker_green.svg';
+      if (avg <= 20) return '/image/marker_yellow.svg';
+      return '/image/marker_red.svg';
+    }
+    return iconSrc || '/image/marker_green.svg';
+  }
+  function makeMarkerImage(size: number) {
+    const src = pickImageSrc();
+    const imageSize = new window.kakao.maps.Size(size, size);
+    const imageOption = { offset: new window.kakao.maps.Point(size / 2, size) };
+    return new window.kakao.maps.MarkerImage(src, imageSize, imageOption);
+  }
+
   const markerRef = useRef<any>(null);
 
+  // Create marker once on mount
   useEffect(() => {
     if (!map || !window.kakao) return;
 
     const pos = new window.kakao.maps.LatLng(lat, lon);
 
-    let imageSrc = '';
-    if (avg !== undefined) {
-      if (avg <= 10) {
-        imageSrc = '/image/marker_green.svg';
-      } else if (avg <= 20) {
-        imageSrc = '/image/marker_yellow.svg';
-      } else {
-        imageSrc = '/image/marker_red.svg';
-      }
-    } else {
-      imageSrc = iconSrc || '/image/marker_green.svg';
-    }
-
-    const imageSize = new window.kakao.maps.Size(32, 32); // 필요 시 조정
-    const imageOption = { offset: new window.kakao.maps.Point(16, 32) };
-
-    const markerImage = new window.kakao.maps.MarkerImage(imageSrc, imageSize, imageOption);
+    const markerImage = makeMarkerImage(active ? 70 : 40);
 
     const marker = new window.kakao.maps.Marker({
       position: pos,
@@ -60,7 +61,42 @@ export default function Marker({ map, lat, lon, title, zIndex, onClick, iconSrc,
         markerRef.current = null;
       }
     };
-  }, [map, lat, lon, title, zIndex, onClick, iconSrc, avg]);
+  }, [map]);
+
+  // Update marker position
+  useEffect(() => {
+    if (markerRef.current && window.kakao) {
+      const pos = new window.kakao.maps.LatLng(lat, lon);
+      markerRef.current.setPosition(pos);
+    }
+  }, [lat, lon]);
+
+  // Update marker title
+  useEffect(() => {
+    if (markerRef.current) {
+      markerRef.current.setTitle(title || '');
+    }
+  }, [title]);
+
+  // Update marker zIndex
+  useEffect(() => {
+    if (markerRef.current && zIndex !== undefined) {
+      markerRef.current.setZIndex(zIndex);
+    }
+  }, [zIndex]);
+
+  // Enlarge/shrink marker image smoothly by swapping MarkerImage (no re-create)
+  useEffect(() => {
+    if (!markerRef.current || !window.kakao) return;
+    const img = makeMarkerImage(active ? 60 : 32);
+    markerRef.current.setImage(img);
+    // lift active marker above others
+    if (typeof zIndex === 'number') {
+      markerRef.current.setZIndex(active ? Math.max(zIndex, 100) : zIndex);
+    } else {
+      markerRef.current.setZIndex(active ? 100 : 0);
+    }
+  }, [active, avg, iconSrc, zIndex]);
 
   return null; // DOM 출력 없음
 }

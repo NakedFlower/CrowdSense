@@ -48,12 +48,12 @@ export default function BeaconSidebar({ open, beacon, onClose }: Props) {
   return (
     <aside
       className={
-        "fixed top-0 right-0 h-full w-[360px] max-w-[85vw] bg-white shadow-xl border-l-3 transition-transform duration-300 ease-out z-[60] " +
+        "fixed top-0 right-0 h-full w-[360px] max-w-[85vw] bg-white shadow-xl transition-transform duration-300 ease-out z-[60] " +
         (open ? "translate-x-0" : "translate-x-full")
       }
       aria-hidden={!open}
     >
-      <div className="flex items-center justify-between px-4 py-3 border-b-3">
+      <div className="flex items-center justify-between px-4 py-3">
         <h2 className="text-base font-semibold">비콘 상세</h2>
         <button
           onClick={onClose}
@@ -78,16 +78,6 @@ export default function BeaconSidebar({ open, beacon, onClose }: Props) {
                 {address && (
                   <div className="text-xs text-gray-500 mt-0.5">{address}</div>
                 )}
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="text-xs text-gray-500">위도</div>
-                  <div>{beacon.lat}</div>
-                </div>
-                <div>
-                  <div className="text-xs text-gray-500">경도</div>
-                  <div>{beacon.lon}</div>
-                </div>
               </div>
             </section>
 

@@ -93,8 +93,8 @@ export default function Home() {
         offset={64}
       >
         {/* Search */}
-        <div className="p-3 border-b-3 sticky top-0 bg-white z-10">
-          <div className="flex border-2 items-center gap-2 bg-gray-100 rounded-lg px-3 py-2">
+        <div className="p-3 sticky top-0 bg-white z-10">
+          <div className="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-2">
             <span className="text-gray-500">
               <img src="/image/magnifier_icon.svg" className="w-4 h-4" />
             </span>
@@ -119,16 +119,6 @@ export default function Home() {
           )}
         </div>
 
-        {/* SmartAround */}
-        <div className="px-4 pt-4">
-          <h3 className="text-sm font-semibold">
-            <span className="font-bold">Smart</span> Around
-          </h3>
-          <div className="mt-2 text-sm text-gray-600 flex items-center gap-2">
-            주변 <span className="text-blue-600">오후 시간대</span> 추천순 ▾
-          </div>
-        </div>
-
         {/* Content */}
         {sidebarMode === 'nearby' ? (
           <div className="px-4 py-4 space-y-2 overflow-y-auto h-[calc(100%-100px)]">
@@ -137,10 +127,19 @@ export default function Home() {
             ) : (
               <ul className="divide-y">
                 {nearbyList.map((b) => (
-                  <li key={b.id} className="py-2 flex items-start justify-between gap-3">
+                  <li
+                    key={b.id}
+                    className="py-2 flex items-start justify-between gap-3 cursor-pointer hover:bg-gray-50 rounded-md px-2"
+                    onClick={() => {
+                      window.dispatchEvent(
+                        new CustomEvent('focus-beacon', {
+                          detail: { id: b.id, lat: b.lat, lon: b.lon, zoom: 4 },
+                        })
+                      );
+                    }}
+                  >
                     <div className="min-w-0">
                       <div className="font-medium font-semibold truncate">{b.name || b.id}</div>
-                      <div className="text-xs text-gray-500 truncate">{b.lat}, {b.lon}</div>
                     </div>
                     {typeof b.avg === 'number' && (
                       <span
@@ -168,7 +167,7 @@ export default function Home() {
             {Array.from({ length: 8 }).map((_, i) => (
               <article
                 key={i}
-                className="rounded-lg border-2 overflow-hidden hover:shadow-sm transition-shadow bg-white"
+                className="rounded-lg  overflow-hidden hover:shadow-sm transition-shadow bg-white"
               >
                 <div className="h-44 bg-gray-100 grid place-items-center text-gray-400">
                   (이미지 {i + 1})

@@ -64,7 +64,7 @@ export default function Sidebar({
 
       {/* Panel (overlay) */}
       <aside
-        className={`fixed top-0 z-50 h-full bg-white border-r-3 shadow-lg will-change-transform transition-transform duration-300 ease-in-out ${
+        className={`fixed top-0 z-50 h-full bg-white shadow-lg will-change-transform transition-transform duration-300 ease-in-out ${
           open ? 'translate-x-0' : translateClosed
         } ${className}`}
         style={style}

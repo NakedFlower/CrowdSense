@@ -19,7 +19,7 @@ const Header: React.FC<HeaderProps> = ({ sidebarOpen, setSidebarOpen }) => {
   ] as const;
 
   return (
-    <nav className="relative z-[60] bg-white border-r-3 flex flex-col items-center py-3 gap-3">
+    <nav className="relative z-[60] bg-blue-50 flex flex-col items-center py-3 gap-3">
       {railItems.map((it) => (
         <button
           key={it.label}

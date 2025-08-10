@@ -30,6 +30,7 @@ export default function MapView({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedBeacon, setSelectedBeacon] = useState<Beacon | null>(null);
   const localItemsRef = useRef<{ beacon: Beacon; lat: number; lon: number; avg: number | null }[]>([]);
+  const [collectedItems, setCollectedItems] = useState<{ beacon: Beacon; lat: number; lon: number; avg: number | null }[]>([]);
 
   const appkey = process.env.NEXT_PUBLIC_KAKAO_MAP_APPKEY!;
 
@@ -89,8 +90,10 @@ export default function MapView({
 
   useEffect(() => {
     if (!ready || !mapEl.current || !window.kakao) return;
+    let disposed = false;
 
     window.kakao.maps.load(async () => {
+      if (disposed) return;
       // 1) 맵 초기화 (1회)
       if (!mapRef.current) {
         const initialCenter = new window.kakao.maps.LatLng(defaultCenter.lat, defaultCenter.lon);
@@ -154,31 +157,17 @@ export default function MapView({
             })
           );
 
-          const nodes: React.ReactNode[] = [];
           const collected: { beacon: Beacon; lat: number; lon: number; avg: number | null }[] = [];
           items.forEach(({ beacon: b, lat, lon }, idx) => {
             const pos = new window.kakao.maps.LatLng(lat, lon);
             bounds.extend(pos);
             const avgVal = (avgs[idx] ?? null) as number | null;
             collected.push({ beacon: b, lat, lon, avg: avgVal });
-            nodes.push(
-              <Marker
-                key={`${b.id}-${lat}-${lon}`}
-                map={map}
-                lat={lat}
-                lon={lon}
-                title={b.name || String(b.id)}
-                avg={avgVal ?? undefined}
-                onClick={() => {
-                  setSelectedBeacon(b);
-                  setSidebarOpen(true);
-                }}
-              />
-            );
           });
-          // Save for nearby list queries
+
+          // Save for nearby list queries & later rendering
           localItemsRef.current = collected;
-          setMarkerNodes(nodes);
+          setCollectedItems(collected);
 
           if (!bounds.isEmpty()) {
             map.setBounds(bounds);
@@ -189,13 +178,68 @@ export default function MapView({
       } catch (err) {
         console.error('[map] fetch error:', err);
       }
-
-      // cleanup: 컴포넌트 unmount 시 마커 정리 (맵은 재사용)
-      return () => {
-        clearMarkers();
-      };
     });
+
+    return () => {
+      disposed = true;
+      clearMarkers();
+    };
   }, [ready, region, rad, limit, defaultCenter.lat, defaultCenter.lon]);
+
+  // Build marker nodes when data or selection changes (no refetch, no map reset)
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const nodes: React.ReactNode[] = collectedItems.map(({ beacon: b, lat, lon, avg }) => (
+      <Marker
+        key={b.id}
+        map={map}
+        lat={lat}
+        lon={lon}
+        title={b.name || String(b.id)}
+        avg={avg ?? undefined}
+        active={selectedBeacon?.id === b.id}
+        onClick={() => {
+          setSelectedBeacon(b);
+          setSidebarOpen(true);
+        }}
+      />
+    ));
+    setMarkerNodes(nodes);
+  }, [collectedItems, selectedBeacon?.id]);
+
+  // Listen: focus on a beacon from outside (e.g., nearby list item click)
+  useEffect(() => {
+    function onFocusBeacon(e: any) {
+      try {
+        const detail = e?.detail || {};
+        const map = mapRef.current;
+        if (!map || !window.kakao) return;
+
+        const { id, lat, lon, zoom } = detail;
+        const items = localItemsRef.current || [];
+        const found = id ? items.find((x) => x.beacon.id === id) : undefined;
+        const tLat = typeof lat === 'number' ? lat : found?.lat;
+        const tLon = typeof lon === 'number' ? lon : found?.lon;
+        if (typeof tLat !== 'number' || typeof tLon !== 'number') return;
+
+        const pos = new window.kakao.maps.LatLng(tLat, tLon);
+        const level = typeof zoom === 'number' ? zoom : 4; // smaller = closer
+        map.setLevel(level);
+        map.panTo(pos);
+
+        const beacon = found?.beacon || items.find((x) => x.lat === tLat && x.lon === tLon)?.beacon;
+        if (beacon) {
+          setSelectedBeacon(beacon);
+          setSidebarOpen(true);
+        }
+      } catch (err) {
+        console.warn('focus-beacon handler failed', err);
+      }
+    }
+    window.addEventListener('focus-beacon', onFocusBeacon as any);
+    return () => window.removeEventListener('focus-beacon', onFocusBeacon as any);
+  }, []);
 
   // Listen: when Header asks to open nearby list, compute visible beacons and notify the existing sidebar
   useEffect(() => {
@@ -238,7 +282,10 @@ export default function MapView({
       <BeaconSidebar
         open={sidebarOpen}
         beacon={selectedBeacon}
-        onClose={() => setSidebarOpen(false)}
+        onClose={() => {
+            setSidebarOpen(false)
+            setSelectedBeacon(null);
+        }}
       />
     </>
   );
