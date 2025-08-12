@@ -25,7 +25,7 @@ jobs:
 
     - name: Create deployment archive
       run: |
-        tar -czf fe.tar.gz .next public package.json package-lock.json next.config.ts
+        tar -czf fe.tar.gz .next/standalone .next/static public
       working-directory: ./front
       
     - name: Upload build artifact
@@ -49,5 +49,5 @@ jobs:
         echo "${{ secrets.SSH_KEY }}" > private_key.pem
         chmod 600 private_key.pem
         scp -i private_key.pem -o StrictHostKeyChecking=no -P ${{ secrets.SSH_PORT }} fe.tar.gz ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/tmp/fe.tar.gz
-        ssh -i private_key.pem -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "export NVM_DIR=\"\$HOME/.nvm\"; [ -s \"\$NVM_DIR/nvm.sh\" ] && \. \"\$NVM_DIR/nvm.sh\"; pm2 stop fe || true; rm -rf /web/fe/build; mkdir -p /web/fe/build; tar -xzf ~/fe.tar.gz -C /web/fe/build; cd /web/fe/build; echo \"NEXT_PUBLIC_KAKAO_MAP_APPKEY=${{ secrets.NEXT_PUBLIC_KAKAO_MAP_APPKEY }}\" > .env.local; echo \"NEXT_PUBLIC_API_BASE=${{ secrets.NEXT_PUBLIC_API_BASE }}\" >> .env.local; npm install --production; pm2 start npm --name \"fe\" -- start; pm2 save"
+        ssh -i private_key.pem -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "export NVM_DIR=\"\$HOME/.nvm\"; [ -s \"\$NVM_DIR/nvm.sh\" ] && \. \"\$NVM_DIR/nvm.sh\"; pm2 stop fe || true; rm -rf /web/fe/build; mkdir -p /web/fe/build; tar -xzf /tmp/fe.tar.gz -C /web/fe/build; cd /web/fe/build/.next/standalone; echo \"NEXT_PUBLIC_KAKAO_MAP_APPKEY=${{ secrets.NEXT_PUBLIC_KAKAO_MAP_APPKEY }}\" > .env.local; echo \"NEXT_PUBLIC_API_BASE=${{ secrets.NEXT_PUBLIC_API_BASE }}\" >> .env.local; pm2 start server.js --name \"fe\"; pm2 save"
         rm -f private_key.pem
