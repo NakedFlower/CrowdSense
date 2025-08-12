@@ -21,6 +21,7 @@ jobs:
       run: |
         echo "NEXT_PUBLIC_KAKAO_MAP_APPKEY=${{ secrets.NEXT_PUBLIC_KAKAO_MAP_APPKEY }}" > .env.production
         echo "NEXT_PUBLIC_API_BASE=${{ secrets.NEXT_PUBLIC_API_BASE }}" >> .env.production
+        echo "GOOGLE_MAPS_API_KEY=${{ secrets.GOOGLE_MAPS_API_KEY }}" >> .env.production
         npm install
         npm run build
       working-directory: ./front
