@@ -34,7 +34,7 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="relative h-screen w-full grid grid-cols-[64px_1fr]">
+    <div className="relative h-screen w-full grid grid-cols-[64px_1fr] text-black">
       <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
       {/* MAP AREA (full width, sidebar는 오버레이로 겹침) */}
