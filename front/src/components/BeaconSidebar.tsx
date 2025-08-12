@@ -82,7 +82,7 @@ export default function BeaconSidebar({ open, beacon, onClose }: Props) {
   return (
     <aside
       className={
-        "fixed top-0 right-0 h-full w-[360px] max-w-[85vw] bg-white shadow-xl transition-transform duration-300 ease-out z-[60] " +
+        "fixed top-0 right-0 h-full w-[360px] max-w-[85vw] bg-blue-50 shadow-xl transition-transform duration-300 ease-out z-[60] " +
         (open ? "translate-x-0" : "translate-x-full")
       }
       aria-hidden={!open}
@@ -91,10 +91,10 @@ export default function BeaconSidebar({ open, beacon, onClose }: Props) {
         <h2 className="text-base font-semibold">상세 정보</h2>
         <button
           onClick={onClose}
-          className="rounded px-2 py-1 text-gray-600 hover:bg-gray-100"
+          className="rounded px-1 py-1 text-gray-600 hover:bg-gray-100"
           aria-label="Close sidebar"
         >
-          <img src="/image/x_icon.svg" alt="닫기" className="w-4 h-4" />
+          <img src="/image/x_icon.svg" alt="닫기" className="w-3 h-3" />
         </button>
       </div>
 
