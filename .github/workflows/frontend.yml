@@ -1,0 +1,57 @@
+name: Build and Deploy Next.js
+
+on:
+  push:
+    branches: [ "fe" ]
+  pull_request:
+    branches: [ "fe" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+
+    - name: Install dependencies and build
+      run: |
+        npm install
+        npm run build
+      working-directory: ./front
+
+    - name: Create deployment archive
+      run: |
+        tar -czf fe.tar.gz
+          --exclude=node_modules \
+          --exclude=.git
+          --exclude=tests \
+          .
+      working-directory: ./front
+      
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: frontend
+        path: front/fe.tar.gz
+    
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Download build artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: frontend
+
+    - name: Deploy to EC2
+      run: |
+        echo "${{ secrets.SSH_KEY }}" > private_key.pem
+        chmod 600 private_key.pem
+        scp -i private_key.pem -o StrictHostKeyChecking=no -P ${{ secrets.SSH_PORT }} fe.tar.gz ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/home/${{ secrets.SSH_USER }}/fe.tar.gz
+        ssh -i private_key.pem -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "tar -xzf /home/${{ secrets.SSH_USER }}/fe.tar.gz -C /web/fe"
+        rm -f private_key.pem
