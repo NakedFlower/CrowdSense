@@ -93,8 +93,8 @@ export default function Home() {
         offset={64}
       >
         {/* Search */}
-        <div className="p-3 sticky top-0 bg-white z-10">
-          <div className="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-2">
+        <div className="p-3 sticky top-0 bg-blue-50 z-10">
+          <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-2">
             <span className="text-gray-500">
               <img src="/image/magnifier_icon.svg" className="w-4 h-4" />
             </span>
@@ -129,7 +129,7 @@ export default function Home() {
                 {nearbyList.map((b) => (
                   <li
                     key={b.id}
-                    className="py-2 flex items-start justify-between gap-3 cursor-pointer hover:bg-gray-50 rounded-md px-2"
+                    className="py-2 flex items-start justify-between gap-3 cursor-pointer hover:bg-white px-2"
                     onClick={() => {
                       window.dispatchEvent(
                         new CustomEvent('focus-beacon', {
@@ -169,8 +169,14 @@ export default function Home() {
                 key={i}
                 className="rounded-lg  overflow-hidden hover:shadow-sm transition-shadow bg-white"
               >
-                <div className="h-44 bg-gray-100 grid place-items-center text-gray-400">
-                  (이미지 {i + 1})
+                <div className="h-44 bg-gray-100 relative overflow-hidden">
+                  <img
+                    src="/image/temp.jpg"
+                    alt="place thumbnail"
+                    className="w-full h-full object-cover select-none"
+                    loading="lazy"
+                    draggable={false}
+                  />
                 </div>
                 <div className="p-3">
                   <div className="flex items-start justify-between">

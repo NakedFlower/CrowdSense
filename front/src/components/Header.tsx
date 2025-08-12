@@ -19,12 +19,12 @@ const Header: React.FC<HeaderProps> = ({ sidebarOpen, setSidebarOpen }) => {
   ] as const;
 
   return (
-    <nav className="relative z-[60] bg-blue-50 flex flex-col items-center py-3 gap-3">
+    <nav className="relative z-[60] bg-blue-100 flex flex-col items-center py-3 gap-3">
       {railItems.map((it) => (
         <button
           key={it.label}
           className={
-            'w-10 h-10 grid place-items-center rounded-lg hover:bg-gray-100 text-xl'
+            'w-10 h-10 grid place-items-center rounded-lg hover:bg-blue-50 text-xl'
           }
           title={it.label}
           aria-label={it.label}
