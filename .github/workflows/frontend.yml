@@ -25,7 +25,7 @@ jobs:
 
     - name: Create deployment archive
       run: |
-        tar -czf fe.tar.gz .next public package.json package-lock.json next.config.js
+        tar -czf fe.tar.gz .next public package.json package-lock.json next.config.ts
       working-directory: ./front
       
     - name: Upload build artifact
