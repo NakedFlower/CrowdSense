@@ -29,6 +29,8 @@ export default function MapView({
   const [markerNodes, setMarkerNodes] = useState<React.ReactNode[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedBeacon, setSelectedBeacon] = useState<Beacon | null>(null);
+  // 근처 혼잡도 모드일 때만 마커 보이기
+  const [showNearbyMarkers, setShowNearbyMarkers] = useState(false);
   const localItemsRef = useRef<{ beacon: Beacon; lat: number; lon: number; avg: number | null }[]>([]);
   const [collectedItems, setCollectedItems] = useState<{ beacon: Beacon; lat: number; lon: number; avg: number | null }[]>([]);
 
@@ -190,6 +192,10 @@ export default function MapView({
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
+    if (!showNearbyMarkers) {
+      setMarkerNodes([]);
+      return;
+    }
     const nodes: React.ReactNode[] = collectedItems.map(({ beacon: b, lat, lon, avg }) => (
       <Marker
         key={b.id}
@@ -206,7 +212,7 @@ export default function MapView({
       />
     ));
     setMarkerNodes(nodes);
-  }, [collectedItems, selectedBeacon?.id]);
+  }, [collectedItems, selectedBeacon?.id, showNearbyMarkers]);
 
   // Listen: focus on a beacon from outside (e.g., nearby list item click)
   useEffect(() => {
@@ -247,6 +253,7 @@ export default function MapView({
       try {
         const map = mapRef.current;
         if (!map || !window.kakao) return;
+        setShowNearbyMarkers(true);
         const b = map.getBounds();
         const visible = (localItemsRef.current || []).filter((x) =>
           b.contain(new window.kakao.maps.LatLng(x.lat, x.lon))
@@ -267,6 +274,17 @@ export default function MapView({
     }
     window.addEventListener('open-nearby', onOpenNearby as any);
     return () => window.removeEventListener('open-nearby', onOpenNearby as any);
+  }, []);
+
+  // Listen: sidebar-open → nearby면 on, 아니면 off
+  useEffect(() => {
+    function onSidebarOpen(e: any) {
+      const mode = e?.detail?.mode;
+      if (mode === 'nearby') setShowNearbyMarkers(true);
+      else setShowNearbyMarkers(false);
+    }
+    window.addEventListener('sidebar-open', onSidebarOpen as any);
+    return () => window.removeEventListener('sidebar-open', onSidebarOpen as any);
   }, []);
 
   return (

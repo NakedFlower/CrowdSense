@@ -24,7 +24,7 @@ const Header: React.FC<HeaderProps> = ({ sidebarOpen, setSidebarOpen }) => {
         <button
           key={it.label}
           className={
-            'w-10 h-10 grid place-items-center rounded-lg hover:bg-blue-50 text-xl'
+            'w-10 h-10 grid place-items-center rounded-lg hover:bg-blue-50 text-xl transition-transform duration-200 ease-in-out hover:scale-105'
           }
           title={it.label}
           aria-label={it.label}

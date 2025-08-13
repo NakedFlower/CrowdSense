@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import MapView from '../components/MapView';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
@@ -14,6 +14,10 @@ export default function Home() {
   // 사이드바 모드 및 근처 목록 상태
   const [sidebarMode, setSidebarMode] = useState<'route' | 'nearby'>('route');
   const [nearbyList, setNearbyList] = useState<NearbyItem[]>([]);
+
+  // Cache of resolved place names by beacon id
+  const placeNameCache = useRef<Record<string, string>>({});
+  const [placeNames, setPlaceNames] = useState<Record<string, string>>({});
 
   // MapView에서 보내는 'sidebar-open' 커스텀 이벤트 수신
   useEffect(() => {
@@ -32,6 +36,44 @@ export default function Home() {
     window.addEventListener('sidebar-open', onSidebarOpen as any);
     return () => window.removeEventListener('sidebar-open', onSidebarOpen as any);
   }, []);
+
+  // Resolve display names for nearby items using our Places API (coord → place name)
+  useEffect(() => {
+    if (sidebarMode !== 'nearby' || nearbyList.length === 0) return;
+    let alive = true;
+    (async () => {
+      const updates: Record<string, string> = {};
+      await Promise.all(
+        nearbyList.map(async (b) => {
+          if (!b?.id) return;
+          if (placeNameCache.current[b.id]) return; // already cached
+          try {
+            const qs = new URLSearchParams({
+              lat: String(b.lat),
+              lon: String(b.lon),
+              radius: '20',
+              name: b.name || '',
+            });
+            const res = await fetch(`/api/places/by-coord?${qs.toString()}`);
+            const json = await res.json();
+            const resolved = json?.place?.name || b.name || b.id;
+            placeNameCache.current[b.id] = resolved;
+            updates[b.id] = resolved;
+          } catch (e) {
+            // fallback to existing b.name or id
+            placeNameCache.current[b.id] = b.name || b.id;
+            updates[b.id] = b.name || b.id;
+          }
+        })
+      );
+      if (alive && Object.keys(updates).length) {
+        setPlaceNames((prev) => ({ ...prev, ...updates }));
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [sidebarMode, nearbyList]);
 
   return (
     <div className="relative h-screen w-full grid grid-cols-[64px_1fr] text-black">
@@ -70,18 +112,6 @@ export default function Home() {
           >
             <img src="/image/location_icon.svg" className="w-4 h-4" />
           </button>
-        </div>
-
-        {/* Weather / scale (bottom-left) */}
-        <div className="absolute left-3 bottom-5 z-10 flex items-end gap-4">
-          <div className="flex items-center gap-2 bg-white border rounded-md px-3 py-2 shadow-sm">
-            <span>🌧️</span>
-            <div className="text-xs leading-tight">
-              <div className="font-semibold">26°</div>
-              <div className="text-gray-500">미세 초미세</div>
-            </div>
-          </div>
-          <div className="text-[11px] text-gray-500">ⓒ NAVER 200m</div>
         </div>
       </section>
 
@@ -125,11 +155,11 @@ export default function Home() {
             {nearbyList.length === 0 ? (
               <p className="text-sm text-gray-500">현재 화면에 보이는 비콘이 없습니다.</p>
             ) : (
-              <ul className="divide-y">
+              <ul>
                 {nearbyList.map((b) => (
                   <li
                     key={b.id}
-                    className="py-2 flex items-start justify-between gap-3 cursor-pointer hover:bg-white px-2"
+                    className="py-2 flex items-start justify-between gap-3 cursor-pointer hover:bg-white px-2 rounded-lg transition-colors transform hover:scale-[1.02] transition-transform duration-150"
                     onClick={() => {
                       window.dispatchEvent(
                         new CustomEvent('focus-beacon', {
@@ -139,12 +169,12 @@ export default function Home() {
                     }}
                   >
                     <div className="min-w-0">
-                      <div className="font-medium font-semibold truncate">{b.name || b.id}</div>
+                      <div className="font-medium font-semibold truncate">{placeNames[b.id] || b.name || b.id}</div>
                     </div>
                     {typeof b.avg === 'number' && (
                       <span
                         className={
-                          'shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ' +
+                          'self-center shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ' +
                           (b.avg <= 10
                             ? 'bg-green-100 text-green-700'
                             : b.avg <= 20
@@ -167,7 +197,7 @@ export default function Home() {
             {Array.from({ length: 8 }).map((_, i) => (
               <article
                 key={i}
-                className="rounded-lg  overflow-hidden hover:shadow-sm transition-shadow bg-white"
+                className="rounded-lg overflow-hidden hover:shadow-sm transition-shadow bg-white transform hover:scale-[1.02] transition-transform duration-150"
               >
                 <div className="h-44 bg-gray-100 relative overflow-hidden">
                   <img

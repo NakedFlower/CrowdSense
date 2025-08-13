@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 type Props = {
   map: any;           // kakao.maps.Map
@@ -32,6 +32,7 @@ export default function Marker({ map, lat, lon, title, zIndex, onClick, iconSrc,
   }
 
   const markerRef = useRef<any>(null);
+  const [hovered, setHovered] = useState(false);
 
   // Create marker once on mount
   useEffect(() => {
@@ -54,6 +55,9 @@ export default function Marker({ map, lat, lon, title, zIndex, onClick, iconSrc,
     if (onClick) {
       window.kakao.maps.event.addListener(marker, 'click', onClick);
     }
+
+    window.kakao.maps.event.addListener(marker, 'mouseover', () => setHovered(true));
+    window.kakao.maps.event.addListener(marker, 'mouseout', () => setHovered(false));
 
     return () => {
       if (markerRef.current) {
@@ -88,7 +92,7 @@ export default function Marker({ map, lat, lon, title, zIndex, onClick, iconSrc,
   // Enlarge/shrink marker image smoothly by swapping MarkerImage (no re-create)
   useEffect(() => {
     if (!markerRef.current || !window.kakao) return;
-    const img = makeMarkerImage(active ? 60 : 32);
+    const img = makeMarkerImage(active ? 60 : hovered ? 40 : 32);
     markerRef.current.setImage(img);
     // lift active marker above others
     if (typeof zIndex === 'number') {
@@ -96,7 +100,7 @@ export default function Marker({ map, lat, lon, title, zIndex, onClick, iconSrc,
     } else {
       markerRef.current.setZIndex(active ? 100 : 0);
     }
-  }, [active, avg, iconSrc, zIndex]);
+  }, [active, avg, iconSrc, zIndex, hovered]);
 
   return null; // DOM 출력 없음
 }

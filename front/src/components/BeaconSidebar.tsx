@@ -91,7 +91,7 @@ export default function BeaconSidebar({ open, beacon, onClose }: Props) {
         <h2 className="text-base font-semibold">상세 정보</h2>
         <button
           onClick={onClose}
-          className="rounded px-1 py-1 text-gray-600 hover:bg-gray-100"
+          className="rounded text-gray-600 hover:bg-gray-100"
           aria-label="Close sidebar"
         >
           <img src="/image/x_icon.svg" alt="닫기" className="w-3 h-3" />
@@ -106,9 +106,18 @@ export default function BeaconSidebar({ open, beacon, onClose }: Props) {
             <section className="space-y-2">
               <div>
                 <div className="text-xs text-gray-500">장소명</div>
-                <div className="font-semibold">
+                <div className="text-xl font-semibold">
                   {detail?.place?.name ?? placeName ?? '건물명 없음'}
                 </div>
+                {(detail?.address?.road || detail?.address?.jibun) && (
+                  <div className="text-sm text-gray-500">{detail.address?.road ?? detail.address?.jibun}</div>
+                )}
+                {detail?.place?.phone && (
+                  <div className="text-sm">{detail.place.phone}</div>
+                )}
+                {detail?.place?.url && (
+                  <a href={detail.place.url} target="_blank" className="text-blue-600 underline">카카오맵에서 보기</a>
+                )}
                 {Array.isArray(detail?.photos) && detail.photos.length > 0 && (
                   <div className="pt-2">
                     <img
@@ -145,18 +154,6 @@ export default function BeaconSidebar({ open, beacon, onClose }: Props) {
                     </div>
                   )}
                 </section>
-                {detail?.place?.category && (
-                  <div className="text-sm text-gray-600">{detail.place.category}</div>
-                )}
-                {(detail?.address?.road || detail?.address?.jibun) && (
-                  <div className="text-sm text-gray-500">{detail.address?.road ?? detail.address?.jibun}</div>
-                )}
-                {detail?.place?.phone && (
-                  <div className="text-sm">{detail.place.phone}</div>
-                )}
-                {detail?.place?.url && (
-                  <a href={detail.place.url} target="_blank" className="text-blue-600 underline">카카오맵에서 보기</a>
-                )}
                 {Array.isArray(detail?.opening_hours) && detail.opening_hours.length > 0 && (
                   <div className="pt-2">
                     <div className="text-xs text-gray-500 mb-1">영업시간</div>
