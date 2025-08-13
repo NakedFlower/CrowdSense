@@ -50,6 +50,10 @@ const Header: React.FC<HeaderProps> = ({ sidebarOpen, setSidebarOpen }) => {
                     console.warn('open-nearby dispatch failed', e);
                   }
                 }
+              : it.label === '더보기'
+              ? () => {
+                  window.location.href = '/admin/login';
+                }
               : undefined
           }
         >
