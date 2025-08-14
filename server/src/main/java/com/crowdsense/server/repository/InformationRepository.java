@@ -67,4 +67,20 @@ public class InformationRepository {
         }
         return result;
     }
+    
+    public Information queryById(String id) {
+        Key key = Key.builder().partitionValue(id).build();
+
+        SdkIterable<Page<Information>> pages = table.query(r -> r
+                .queryConditional(QueryConditional.keyEqualTo(key))
+                .limit(1)
+        );
+
+        for (Page<Information> p : pages) {
+            for (Information item : p.items()) {
+                return item;
+            }
+        }
+        return null;
+    }
 }

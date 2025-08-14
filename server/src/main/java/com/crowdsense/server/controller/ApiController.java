@@ -51,6 +51,19 @@ public class ApiController {
         return ResponseEntity.ok(new ApiResponse<BeaconIdsResponse>(200, payload));
     }
 
+    @RequestMapping(value = "/beacon_id", method = {RequestMethod.GET, RequestMethod.POST})
+    public ResponseEntity<ApiResponse<BeaconSummary>> beaconId(
+            @RequestParam String id
+    ) {
+        BeaconSummary item = beaconService.getBeaconById(id);
+
+        if (item == null) {
+            return ResponseEntity.ok(new ApiResponse<>(404, null));
+        }
+
+        return ResponseEntity.ok(new ApiResponse<>(200, item));
+    }
+
     @RequestMapping(value = "/crowd_avg", method = {RequestMethod.GET, RequestMethod.POST})
     public ResponseEntity<ApiResponse<CrowdAvgResponse>> crowdAvg(
             @RequestParam String id,

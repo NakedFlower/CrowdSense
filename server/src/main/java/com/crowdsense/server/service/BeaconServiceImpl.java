@@ -44,6 +44,12 @@ public class BeaconServiceImpl implements BeaconService {
     }
 
     @Override
+    public BeaconSummary getBeaconById(String id) {
+        Information info = infoRepo.queryById(id);
+        return (info == null) ? null : BeaconSummary.from(info);
+    }
+
+    @Override
     public double getCrowdAverage(String id, int minutes) {
         long now = Instant.now().getEpochSecond();
         long from = now - (minutes * 60L);
