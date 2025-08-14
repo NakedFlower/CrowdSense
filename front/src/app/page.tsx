@@ -138,8 +138,8 @@ export default function Home() {
         <div className="px-4 pt-4">
           {sidebarMode === 'nearby' ? (
             <>
-              <h2 className="text-xl font-bold">근처 혼잡도</h2>
-              <p className="text-[11px] text-gray-500 mt-1">현재 화면에 보이는 비콘 목록</p>
+              <h2 className="text-xl font-bold">매장 혼잡도</h2>
+              <p className="text-[11px] text-gray-500 mt-1">현재 화면에 보이는 매장</p>
             </>
           ) : (
             <>
