@@ -4,6 +4,7 @@ import com.crowdsense.server.dto.ApiResponse;
 import com.crowdsense.server.dto.response.BeaconIdsResponse;
 import com.crowdsense.server.dto.response.BeaconSummary;
 import com.crowdsense.server.dto.response.CrowdAvgResponse;
+import com.crowdsense.server.dto.response.CrowdStatResponse;
 import com.crowdsense.server.service.BeaconService;
 
 import java.util.List;
@@ -17,6 +18,7 @@ public class ApiController {
 
     private static final int MAX_LIMIT = 25;
     private static final int MAX_TIME_MINUTES = 30;
+    private static final int MAX_PERIOD_DAYS = 30;
 
     private final BeaconService beaconService;
 
@@ -84,5 +86,15 @@ public class ApiController {
         int minutes = Math.min(time, MAX_TIME_MINUTES);
         double avg = beaconService.getCrowdAverage(id, minutes);
         return ResponseEntity.ok(new ApiResponse<>(200, new CrowdAvgResponse(avg)));
+    }
+    
+    @RequestMapping(value = "/crowd_stat", method = {RequestMethod.GET, RequestMethod.POST})
+    public ResponseEntity<ApiResponse<CrowdStatResponse>> crowdStat(
+            @RequestParam String id,
+            @RequestParam(defaultValue = "1") int period
+    ) {
+        int days = Math.min(Math.max(period, 1), MAX_PERIOD_DAYS);
+        CrowdStatResponse payload = beaconService.getCrowdStat(id, days);
+        return ResponseEntity.ok(new ApiResponse<>(200, payload));
     }
 }

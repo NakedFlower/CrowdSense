@@ -1,6 +1,7 @@
 package com.crowdsense.server.service;
 
 import com.crowdsense.server.dto.response.BeaconSummary;
+import com.crowdsense.server.dto.response.CrowdStatResponse;
 import com.crowdsense.server.model.Information;
 import com.crowdsense.server.model.Scan;
 import com.crowdsense.server.repository.InformationRepository;
@@ -8,6 +9,9 @@ import com.crowdsense.server.repository.ScanRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -72,6 +76,40 @@ public class BeaconServiceImpl implements BeaconService {
             }
         }
         return cnt == 0 ? 0.0 : (double) sum / cnt;
+    }
+
+    @Override
+    public CrowdStatResponse getCrowdStat(String id, int periodDays) {
+        Instant now = Instant.now();
+        ZonedDateTime zdt = ZonedDateTime.ofInstant(now, ZoneOffset.UTC)
+                                         .withMinute(0).withSecond(0).withNano(0);
+        long nowHourFloor = zdt.toEpochSecond();
+
+        int hours = periodDays * 24;
+        long start = nowHourFloor - (hours * 3600L);
+        long endExclusive = nowHourFloor;
+        long endInclusive = endExclusive - 1;
+
+        var points = scanRepo.queryBetweenProjected(id, start, endInclusive);
+
+        double[] sum = new double[hours];
+        int[] cnt = new int[hours];
+        for (ScanRepository.ScanPoint p : points) {
+            if (p.count() == null) continue;
+            long ts = p.timestamp();
+            if (ts < start || ts >= endExclusive) continue;
+            int bucket = (int)((ts - start) / 3600L);
+            if (bucket < 0 || bucket >= hours) continue;
+            sum[bucket] += p.count();
+            cnt[bucket] += 1;
+        }
+
+        ArrayList<Double> list = new ArrayList<>(hours);
+        for (int i = 0; i < hours; i++) {
+            list.add(cnt[i] == 0 ? 0.0 : (sum[i] / cnt[i]));
+        }
+
+        return new CrowdStatResponse(list, start);
     }
 
     private record Dist(Information info, double distance) {}
