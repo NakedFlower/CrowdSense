@@ -37,8 +37,8 @@ public class BeaconServiceImpl implements BeaconService {
     }
 
     @Override
-    public List<BeaconSummary> getBeaconIdsByName(String name, int limit) {
-        return infoRepo.queryByName(name, limit).stream()
+    public List<BeaconSummary> getBeaconIdsByName(String name, boolean strict, int limit) {
+        return infoRepo.queryByName(name, strict, limit).stream()
                 .map(BeaconSummary::from)
                 .collect(Collectors.toList());
     }

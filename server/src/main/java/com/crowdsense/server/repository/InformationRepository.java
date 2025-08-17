@@ -27,28 +27,48 @@ public class InformationRepository {
         this.typeIndex = table.index("Type-index");
     }
 
-    public List<Information> queryByName(String name, int limit) {
-        Expression filter = Expression.builder()
-                .expression("contains(#n, :term)")
-                .putExpressionName("#n", "Name")
-                .putExpressionValue(":term", AttributeValue.builder().s(name).build())
-                .build();
+    public List<Information> queryByName(String name, boolean strict, int limit) {
+        final String term = name == null ? "" : name.trim();
 
-        List<Information> result = new ArrayList<>();
-        
-        SdkIterable<Page<Information>> pages = nameIndex.scan(r -> r
-                .filterExpression(filter)
-                .limit(limit * 5)
-        );
+    List<Information> result = new ArrayList<>();
+        if (strict) {
+            Key key = Key.builder().partitionValue(term).build();
+            SdkIterable<Page<Information>> pages = nameIndex.query(r -> r
+                    .queryConditional(QueryConditional.keyEqualTo(key))
+                    .limit(Math.max(limit, 1))
+            );
 
-        for (Page<Information> p : pages) {
-            for (Information item : p.items()) {
-                result.add(item);
+            for (Page<Information> p : pages) {
+                for (Information item : p.items()) {
+                    result.add(item);
+                    if (result.size() >= limit) break;
+                }
                 if (result.size() >= limit) break;
             }
-            if (result.size() >= limit) break;
+
+            result.removeIf(i -> i.getName() == null || !i.getName().trim().equals(term));
+            return result;
+        } else {
+            Expression filter = Expression.builder()
+                    .expression("contains(#n, :term)")
+                    .putExpressionName("#n", "Name")
+                    .putExpressionValue(":term", AttributeValue.builder().s(term).build())
+                    .build();
+
+            SdkIterable<Page<Information>> pages = nameIndex.scan(r -> r
+                    .filterExpression(filter)
+                    .limit(limit * 5)
+            );
+
+            for (Page<Information> p : pages) {
+                for (Information item : p.items()) {
+                    result.add(item);
+                    if (result.size() >= limit) break;
+                }
+                if (result.size() >= limit) break;
+            }
+            return result;
         }
-        return result;
     }
 
     public List<Information> queryByRegion(String region, int limit) {

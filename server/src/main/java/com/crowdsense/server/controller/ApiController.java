@@ -41,11 +41,12 @@ public class ApiController {
 
     @RequestMapping(value = "/beacon_name", method = {RequestMethod.GET, RequestMethod.POST})
     public ResponseEntity<ApiResponse<BeaconIdsResponse>> beaconName(
-            @RequestParam String name,
-            @RequestParam(defaultValue = "10") int limit
+        @RequestParam String name,
+        @RequestParam(defaultValue = "10") int limit,
+        @RequestParam(defaultValue = "false") boolean strict
     ) {
         int lim = Math.min(limit, MAX_LIMIT);
-        List<BeaconSummary> items = beaconService.getBeaconIdsByName(name, lim);
+        List<BeaconSummary> items = beaconService.getBeaconIdsByName(name, strict, lim);
         BeaconIdsResponse payload = new BeaconIdsResponse(items);
 
         return ResponseEntity.ok(new ApiResponse<BeaconIdsResponse>(200, payload));
