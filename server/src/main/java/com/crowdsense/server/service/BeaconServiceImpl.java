@@ -44,6 +44,13 @@ public class BeaconServiceImpl implements BeaconService {
     }
 
     @Override
+    public List<BeaconSummary> getBeaconIdsByRegion(String region, int limit) {
+        return infoRepo.queryByRegion(region, limit).stream()
+                .map(BeaconSummary::from)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public BeaconSummary getBeaconById(String id) {
         Information info = infoRepo.queryById(id);
         return (info == null) ? null : BeaconSummary.from(info);
