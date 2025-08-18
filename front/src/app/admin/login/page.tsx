@@ -123,7 +123,7 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-0px)] w-full bg-gray-500 py-10">
+    <div className="min-h-[calc(100vh-0px)] w-full bg-gray-300 py-10">
       <div className="mx-auto max-w-3xl p-4">
         <section
           className={
