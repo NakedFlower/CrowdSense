@@ -37,6 +37,18 @@ export default function Home() {
     return () => window.removeEventListener('sidebar-open', onSidebarOpen as any);
   }, []);
 
+  // 맵 확대/이동 시 근처 목록 초기화 (nearby 모드 UX 일관성)
+  useEffect(() => {
+    function onViewportChanged() {
+      // nearby 모드에서만 초기화
+      setNearbyList([]);
+      placeNameCache.current = {};
+      setPlaceNames({});
+    }
+    window.addEventListener('map-viewport-changed', onViewportChanged);
+    return () => window.removeEventListener('map-viewport-changed', onViewportChanged);
+  }, []);
+
   // Resolve display names for nearby items using our Places API (coord → place name)
   useEffect(() => {
     if (sidebarMode !== 'nearby' || nearbyList.length === 0) return;
