@@ -320,7 +320,18 @@ export default function AdminDashboardPage() {
           <section className="rounded-2xl bg-white p-4 md:p-6 shadow">
 
             <h2 className="mb-2 text-xl font-semibold">기간 / 시간대별 혼잡도 변화</h2>
-            <div className="overflow-x-auto rounded-lg border bg-white transition-transform duration-150 hover:scale-[1.02] hover:shadow-md mx-auto w-full">
+            <div className="relative overflow-x-auto rounded-lg border bg-white transition-transform duration-150 hover:scale-[1.02] hover:shadow-md mx-auto w-full">
+              {/* Legend: 평균 / 오늘 */}
+              <div className="absolute right-3 top-3 z-10 flex items-center gap-3 text-xs select-none">
+                <span className="inline-flex items-center gap-1 text-slate-600">
+                  <span className="inline-block h-2 w-5 rounded bg-[#94a3b8]" />
+                  평균(점선)
+                </span>
+                <span className="inline-flex items-center gap-1 text-slate-600">
+                  <span className="inline-block h-2 w-5 rounded bg-[#fb923c]" />
+                  오늘
+                </span>
+              </div>
               <LineChart labels={chart.labels} series={chart.series} />
             </div>
 
