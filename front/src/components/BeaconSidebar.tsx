@@ -23,18 +23,21 @@ export default function BeaconSidebar({ open, beacon, onClose }: Props) {
   const [address, setAddress] = useState<string | null>(null);
   const [detail, setDetail] = useState<PlaceDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+
   useEffect(() => {
     setPlaceName(beacon?.name || null);
     setAddress(null);
   }, [beacon?.name]);
 
   useEffect(() => {
+    if (!beacon?.id) {
+      setAvg(null);
+      return;
+    }
+
     let mounted = true;
+
     async function load() {
-      if (!beacon?.id) {
-        setAvg(null);
-        return;
-      }
       try {
         setLoading(true);
         setError(null);
@@ -47,9 +50,16 @@ export default function BeaconSidebar({ open, beacon, onClose }: Props) {
         if (mounted) setLoading(false);
       }
     }
+
+    // 최초 실행
     load();
+
+    // 10초마다 갱신
+    const intervalId = setInterval(load, 10000);
+
     return () => {
       mounted = false;
+      clearInterval(intervalId);
     };
   }, [beacon?.id]);
 
@@ -136,19 +146,26 @@ export default function BeaconSidebar({ open, beacon, onClose }: Props) {
                     <div className="text-red-500">오류: {error}</div>
                   ) : (
                     <div className="flex items-center gap-2">
-                      <span className="text-lg font-semibold">{avg ?? "데이터 없음"}</span>
+                      <span className="text-lg font-semibold">
+                        {avg !== null ? (Math.floor(avg * 10) / 10) : "데이터 없음"}{" "}
+                        {avg !== null && (
+                          <span className="text-sm font-normal text-gray-800">
+                            (예상 인원: 약 {Math.floor(avg / 3.5)}명)
+                          </span>
+                        )}
+                      </span>
                       {typeof avg === "number" && (
                         <span
                           className={
                             "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium " +
-                            (avg <= 10
+                            (avg <= 50
                               ? "bg-green-100 text-green-700"
-                              : avg <= 20
+                              : avg <= 300
                               ? "bg-yellow-100 text-yellow-700"
                               : "bg-red-100 text-red-700")
                           }
                         >
-                          {avg <= 10 ? "원활" : avg <= 20 ? "보통" : "혼잡"}
+                          {avg <= 50 ? "원활" : avg <= 300 ? "보통" : "혼잡"}
                         </span>
                       )}
                     </div>

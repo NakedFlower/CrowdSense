@@ -19,8 +19,8 @@ type Props = {
 export default function Marker({ map, lat, lon, title, zIndex, onClick, iconSrc, avg, active, count }: Props) {
   function pickImageSrc() {
     if (avg !== undefined) {
-      if (avg <= 10) return '/image/marker_green.svg';
-      if (avg <= 20) return '/image/marker_yellow.svg';
+      if (avg <= 50) return '/image/marker_green.svg';
+      if (avg <= 300) return '/image/marker_yellow.svg';
       return '/image/marker_red.svg';
     }
     return iconSrc || '/image/marker_green.svg';

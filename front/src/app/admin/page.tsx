@@ -309,7 +309,7 @@ export default function AdminDashboardPage() {
 
 
   return (
-    <div className="min-h-screen p-4 md:p-6 bg-gray-300">
+    <div className="min-h-screen p-4 md:p-6 bg-gray-300 text-black">
       {/* Top bar */}
       <div className="mx-auto max-w-7xl">
         <AdminHeader title={`${(searchParams.getAll('beacon')[0] || beaconName || 'Beacon')} Admin`} />
@@ -411,9 +411,9 @@ export default function AdminDashboardPage() {
                     <div className="flex items-center gap-2">
                       {typeof b.avg === 'number' ? (
                         <>
-                          <span className="font-semibold">{b.avg}</span>
-                          <Badge tone={b.avg <= 10 ? 'success' : b.avg <= 20 ? 'neutral' : 'warn'}>
-                            {b.avg <= 10 ? '원활' : b.avg <= 20 ? '보통' : '혼잡'}
+                          <span className="font-semibold">{Math.floor(b.avg * 100) / 100}</span>
+                          <Badge tone={b.avg <= 50 ? 'success' : b.avg <= 300 ? 'neutral' : 'warn'}>
+                            {b.avg <= 50 ? '원활' : b.avg <= 300 ? '보통' : '혼잡'}
                           </Badge>
                         </>
                       ) : (

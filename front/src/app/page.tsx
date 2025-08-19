@@ -187,15 +187,15 @@ export default function Home() {
                       <span
                         className={
                           'self-center shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ' +
-                          (b.avg <= 10
+                          (b.avg <= 50
                             ? 'bg-green-100 text-green-700'
-                            : b.avg <= 20
+                            : b.avg <= 300
                             ? 'bg-yellow-100 text-yellow-700'
                             : 'bg-red-100 text-red-700')
                         }
                         title={`avg: ${b.avg}`}
                       >
-                        {b.avg <= 10 ? '원활' : b.avg <= 20 ? '보통' : '혼잡'}
+                        {b.avg <= 50 ? '원활' : b.avg <= 300 ? '보통' : '혼잡'}
                       </span>
                     )}
                   </li>
