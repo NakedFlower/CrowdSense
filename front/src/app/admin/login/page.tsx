@@ -1,8 +1,8 @@
 'use client'
-import React, { useEffect, useState } from 'react'
+import React, { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 
-export default function AdminLoginPage() {
+function AdminLoginPageInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -173,5 +173,13 @@ export default function AdminLoginPage() {
         </section>
       </div>
     </div>
+  )
+}
+
+export default function AdminLoginPage() {
+  return (
+    <Suspense fallback={<div className="p-4">로딩 중…</div>}>
+      <AdminLoginPageInner />
+    </Suspense>
   )
 }

@@ -1,9 +1,9 @@
 'use client'
-import React, { useEffect, useMemo, useState } from 'react'
-// no extra imports needed; we'll use fetch to hit /api/crowd_stat
+
+import React, { Suspense, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { getCrowdAvg, getBeaconByName } from '../../lib/api'
-import AdminHeader from '@/components/AdminHeader';
+import AdminHeader from '@/components/AdminHeader'
 
 // ===== Mock (hardcoded) chart data =====
 // Two series: avg congestion vs. today
@@ -116,7 +116,10 @@ const Badge: React.FC<React.PropsWithChildren<{ tone?: 'success'|'neutral'|'warn
   }>{children}</span>
 )
 
-export default function AdminDashboardPage() {
+// =======================
+// Inner: 훅/검색파람 사용
+// =======================
+function AdminDashboardPageInner() {
   const [query, setQuery] = useState('')
   const [dateRange, setDateRange] = useState({ from: '', to: '' })
 
@@ -431,5 +434,13 @@ export default function AdminDashboardPage() {
         <div className="h-6"/>
       </div>
     </div>
+  )
+}
+
+export default function AdminDashboardPage() {
+  return (
+    <Suspense fallback={<div className="p-4">로딩 중…</div>}>
+      <AdminDashboardPageInner />
+    </Suspense>
   )
 }
